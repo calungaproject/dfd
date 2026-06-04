@@ -1,0 +1,34 @@
+# Pipeline type definitions for DFD3.
+# Copy this file to pipeline_types.yaml and update with your project's values.
+#
+# Each pipeline type maps to a Tekton PipelineRun label selector in a
+# specific Konflux tenant namespace. DFD3 uses these to fetch runs from
+# KubeArchive and organize failure analysis by pipeline type.
+#
+# Optional fields:
+#   enabled: true/false (default: true) — set to false to skip collection
+
+pipeline_types:
+  - id: build
+    display_name: Build
+    label_selector: "pipelines.appstudio.openshift.io/type=build"
+    namespace: example-tenant
+    description: Source builds
+
+  - id: integration_test
+    display_name: Integration Test
+    label_selector: "pipelines.appstudio.openshift.io/type=test,tekton.dev/pipeline=integration-test"
+    namespace: example-tenant
+    description: Integration tests
+
+  - id: enterprise_contract
+    display_name: Enterprise Contract
+    label_selector: "pipelines.appstudio.openshift.io/type=test,tekton.dev/pipeline=enterprise-contract"
+    namespace: example-tenant
+    description: EC validation and signing
+
+  - id: release
+    display_name: Release
+    label_selector: "pipelines.appstudio.openshift.io/type=managed,release.appstudio.openshift.io/namespace=example-tenant"
+    namespace: example-releng-tenant
+    description: Release pipeline

@@ -1,0 +1,108 @@
+.cost-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cost-chart-area {
+  display: flex;
+  height: 200px;
+  gap: 0.25rem;
+}
+
+.cost-y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 22px;
+  width: 50px;
+  flex-shrink: 0;
+}
+
+.cost-y-label {
+  font-size: 0.72rem;
+  color: #8b90a0;
+  line-height: 1;
+}
+
+.cost-grid-and-bars {
+  flex: 1;
+  position: relative;
+  padding-bottom: 22px;
+}
+
+.cost-gridlines {
+  position: absolute;
+  inset: 0;
+  bottom: 22px;
+  pointer-events: none;
+}
+
+.cost-gridline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cost-bars {
+  display: flex;
+  align-items: flex-end;
+  height: calc(100% - 22px);
+  gap: 3px;
+  padding: 0 4px;
+}
+
+.cost-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.cost-bar-stack {
+  width: 100%;
+  max-width: 32px;
+  display: flex;
+  flex-direction: column-reverse;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: height 0.6s ease;
+}
+
+.cost-bar-segment {
+  min-height: 2px;
+}
+
+.cost-x-label {
+  font-size: 0.65rem;
+  color: #8b90a0;
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+.cost-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.cost-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #b0b5c0;
+}
+
+.cost-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}

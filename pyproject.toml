@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=70.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dfd"
+version = "0.1.0"
+description = "Dumpster Fire Diving — AI-powered CI failure analysis"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic[vertex]>=0.52",
+    "psycopg2-binary>=2.9",
+    "httpx>=0.28",
+    "pydantic>=2.10",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "sse-starlette>=2.2",
+    "boto3>=1.35",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.25",
+    "ruff>=0.11",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+dfd = ["prompts/**/*.md"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

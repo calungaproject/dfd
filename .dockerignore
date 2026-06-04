@@ -1,0 +1,16 @@
+**/node_modules
+**/__pycache__
+*.pyc
+.git
+.venv
+.env
+credentials.json
+.ruff_cache
+.pytest_cache
+src/dfd3/api/static
+src/dfd3/dashboard/dist
+backups
+docs
+tests
+*.md
+!pyproject.toml

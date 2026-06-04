@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment / Credentials
+.env
+credentials.json
+pipeline_types.yaml
+
+# Node / Dashboard
+src/dfd3/dashboard/node_modules/
+src/dfd3/dashboard/dist/
+src/dfd3/api/static/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+.ralph/**
+.ralphrc

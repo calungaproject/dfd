@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dfd-postgresql-backup
+  namespace: dfd
+  labels:
+    app: dfd
+    component: postgresql-backup
+spec:
+  schedule: "0 3 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            # Requires Red Hat subscription; community alternative: docker.io/postgres:16
+            - name: backup
+              image: registry.redhat.io/rhel9/postgresql-16:latest
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+                  BACKUP_FILE="/backups/dfd-backup-${TIMESTAMP}.sql.gz"
+                  pg_dump -h dfd-postgresql -U "$POSTGRESQL_USER" "$POSTGRESQL_DATABASE" | gzip > "$BACKUP_FILE"
+                  echo "Backup created: $BACKUP_FILE ($(du -h "$BACKUP_FILE" | cut -f1))"
+                  find /backups -name "dfd-backup-*.sql.gz" -mtime +14 -delete
+                  echo "Pruned backups older than 14 days"
+              env:
+                - name: POSTGRESQL_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: dfd-database
+                      key: username
+                - name: POSTGRESQL_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: dfd-database
+                      key: database
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: dfd-database
+                      key: password
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: dfd-postgresql-backups
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dfd-postgresql-backups
+  namespace: dfd
+  labels:
+    app: dfd
+    component: postgresql-backup
+spec:
+  accessModes:
+    - ReadWriteOnce
+  # AWS-specific; adjust for your cluster (e.g. standard, managed-premium)
+  storageClassName: gp3-csi
+  resources:
+    requests:
+      storage: 5Gi

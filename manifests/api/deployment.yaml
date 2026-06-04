@@ -1,0 +1,150 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dfd-api
+  namespace: dfd
+  labels:
+    app: dfd
+    component: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dfd
+      component: api
+  template:
+    metadata:
+      labels:
+        app: dfd
+        component: api
+    spec:
+      serviceAccountName: dfd
+      initContainers:
+        - name: run-migrations
+          image: <YOUR_REGISTRY>/dfd:latest
+          command: ["python", "scripts/migrate.py"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-database
+                  key: url
+      containers:
+        - name: api
+          image: <YOUR_REGISTRY>/dfd:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DFD_AUTH_ENABLED
+              value: "true"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-database
+                  key: url
+            - name: GOOGLE_CLOUD_PROJECT
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-vertex-ai
+                  key: project-id
+            - name: GOOGLE_CLOUD_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-vertex-ai
+                  key: region
+            - name: S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-aws-s3
+                  key: bucket
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-aws-credentials
+                  key: access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-aws-credentials
+                  key: secret-access-key
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-aws-s3
+                  key: region
+            - name: CLAUDE_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: dfd-config
+                  key: CLAUDE_MODEL
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/run/secrets/gcp/credentials.json
+          volumeMounts:
+            - name: gcp-credentials
+              mountPath: /var/run/secrets/gcp
+              readOnly: true
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+        # Requires Red Hat subscription; community alternative: quay.io/openshift/oauth-proxy
+        - name: oauth-proxy
+          image: registry.redhat.io/openshift4/ose-oauth-proxy:v4.14
+          args:
+            - --https-address=:8443
+            - --http-address=
+            - --provider=openshift
+            - --openshift-service-account=dfd
+            - --upstream=http://localhost:8080
+            - --tls-cert=/etc/tls/private/tls.crt
+            - --tls-key=/etc/tls/private/tls.key
+            - --cookie-secret-file=/etc/proxy/cookie-secret/cookie-secret
+            - --cookie-name=_dfd_oauth_proxy
+            - --skip-auth-regex=^/health$
+            - --pass-user-headers=true
+            - --pass-access-token=false
+            - --email-domain=*
+          ports:
+            - containerPort: 8443
+              name: proxy
+          volumeMounts:
+            - name: proxy-tls
+              mountPath: /etc/tls/private
+              readOnly: true
+            - name: cookie-secret
+              mountPath: /etc/proxy/cookie-secret
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
+      volumes:
+        - name: gcp-credentials
+          secret:
+            secretName: dfd-gcp-credentials
+        - name: proxy-tls
+          secret:
+            secretName: dfd-api-tls
+        - name: cookie-secret
+          secret:
+            secretName: dfd-oauth-proxy-cookie

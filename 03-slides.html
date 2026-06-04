@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red Hat Trusted Libraries (Calunga) — Architecture</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/theme/black.min.css">
+<style>
+  :root {
+    --r-heading-color: #e94560;
+    --r-main-color: #eee;
+    --r-background-color: #1a1a2e;
+    --r-link-color: #53a8b6;
+  }
+  .reveal { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  .reveal h1 { font-size: 2.4em; color: #e94560; }
+  .reveal h2 { font-size: 1.6em; color: #e94560; margin-bottom: 0.6em; }
+  .reveal h3 { font-size: 1.1em; color: #53a8b6; margin-bottom: 0.4em; }
+  .reveal ul { text-align: left; }
+  .reveal li { font-size: 0.75em; line-height: 1.6; margin-bottom: 4px; }
+  .reveal p { font-size: 0.8em; }
+  .reveal pre { font-size: 0.55em; }
+  .reveal code { color: #53a8b6; }
+
+  .highlight { color: #e94560; font-weight: bold; }
+  .tag { display: inline-block; background: #0f3460; padding: 4px 14px; border-radius: 20px; font-size: 0.6em; margin: 3px; }
+  .tag.green { background: #1b8a5a; }
+  .tag.orange { background: #c4721a; }
+
+  .subtitle { font-size: 1.1em !important; color: #aaa; }
+
+  .diagram {
+    background: #0d1117;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px auto;
+  }
+  .diagram svg { max-width: 100%; height: auto; }
+
+  .flow-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-items: stretch;
+  }
+  .flow-box {
+    background: #162447;
+    border: 2px solid #1f4068;
+    border-radius: 10px;
+    padding: 14px 10px;
+    min-width: 150px;
+    max-width: 200px;
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
+  .flow-box.accent { border-color: #e94560; }
+  .flow-box.green { border-color: #1b8a5a; }
+  .flow-box .num {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #e94560;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.65em;
+  }
+  .flow-box h4 { color: #53a8b6; margin-bottom: 4px; font-size: 0.7em; }
+  .flow-box p { font-size: 0.55em !important; color: #bbb; margin: 0; }
+  .flow-arrow { font-size: 1.4em; color: #e94560; display: flex; align-items: center; }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    text-align: left;
+  }
+  .two-col > div {
+    background: #162447;
+    border-radius: 10px;
+    padding: 18px;
+    border: 1px solid #1f4068;
+  }
+  .two-col li { font-size: 0.6em; }
+  .two-col h3 { font-size: 0.85em; }
+
+  .reveal table { font-size: 0.6em; margin: 8px 0; }
+  .reveal table th { background: #0f3460; color: #e94560; padding: 6px 10px; }
+  .reveal table td { padding: 5px 10px; border-bottom: 1px solid #333; }
+
+  .reveal .small { font-size: 0.6em; color: #888; }
+  .reveal .center-note { text-align: center; font-size: 0.6em; color: #888; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<div class="reveal">
+<div class="slides">
+
+<!-- SLIDE 1: Title -->
+<section>
+  <h1>Red Hat Trusted Libraries</h1>
+  <p class="subtitle">Codename: <span class="highlight">Calunga</span></p>
+  <p>
+    A system for building, verifying, and distributing Python wheels<br>
+    compiled from source in a trusted build environment.
+  </p>
+  <div style="margin-top: 30px;">
+    <span class="tag">1035+ packages</span>
+    <span class="tag">manylinux_2_28</span>
+    <span class="tag">Python 3.12</span>
+    <span class="tag green">SLSA provenance</span>
+    <span class="tag green">Enterprise Contract</span>
+    <span class="tag orange">Fromager</span>
+    <span class="tag orange">Konflux CI</span>
+  </div>
+</section>
+
+<!-- SLIDE 2: Problem Statement -->
+<section>
+  <h2>Why?</h2>
+  <div class="two-col">
+    <div>
+      <h3>The Problem</h3>
+      <ul>
+        <li>PyPI wheels are pre-built binaries &mdash; you trust the maintainer's build environment</li>
+        <li>No SLSA provenance or attestation</li>
+        <li>Dependencies resolved at build time by maintainers, not you</li>
+        <li>SBOMs are rare or inconsistent</li>
+        <li>Supply chain attacks (typosquatting, account takeover) are increasing</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Calunga's Answer</h3>
+      <ul>
+        <li><span class="highlight">Every wheel built from source</span> using Fromager</li>
+        <li>Built inside a <span class="highlight">controlled manylinux builder image</span> (UBI8)</li>
+        <li>Full <span class="highlight">SLSA provenance</span> via Tekton Chains</li>
+        <li><span class="highlight">Embedded SBOMs</span> in every wheel</li>
+        <li><span class="highlight">Enterprise Contract</span> validation before release</li>
+        <li>Integration tested on <span class="highlight">6 OS targets</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 3: Two Repos -->
+<section>
+  <h2>Two Repos, One System</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg">
+      <rect x="20" y="20" width="400" height="280" rx="16" fill="#162447" stroke="#e94560" stroke-width="2"/>
+      <text x="220" y="55" text-anchor="middle" fill="#e94560" font-size="18" font-weight="bold">calungaproject/index</text>
+      <text x="220" y="80" text-anchor="middle" fill="#888" font-size="13">"WHAT to build"</text>
+      <rect x="50" y="100" width="340" height="40" rx="8" fill="#0d1117" stroke="#333" stroke-width="1"/>
+      <text x="220" y="125" text-anchor="middle" fill="#53a8b6" font-size="14">onboarded_packages/ (1035+ JSON files)</text>
+      <rect x="50" y="155" width="340" height="40" rx="8" fill="#0d1117" stroke="#333" stroke-width="1"/>
+      <text x="220" y="180" text-anchor="middle" fill="#53a8b6" font-size="14">hack/ (onboard, check-updates, identify)</text>
+      <rect x="50" y="210" width="340" height="40" rx="8" fill="#0d1117" stroke="#333" stroke-width="1"/>
+      <text x="220" y="235" text-anchor="middle" fill="#53a8b6" font-size="14">.tekton/ (build pipeline + PipelineRuns)</text>
+      <rect x="50" y="265" width="340" height="25" rx="8" fill="#0d1117" stroke="#333" stroke-width="1"/>
+      <text x="220" y="283" text-anchor="middle" fill="#53a8b6" font-size="12">konflux/ (EC policy, release plan, nudge config)</text>
+
+      <path d="M430 160 L470 160" stroke="#e94560" stroke-width="3" marker-end="url(#arr)"/>
+      <text x="450" y="148" text-anchor="middle" fill="#888" font-size="11">uses</text>
+
+      <rect x="480" y="20" width="400" height="280" rx="16" fill="#162447" stroke="#1b8a5a" stroke-width="2"/>
+      <text x="680" y="55" text-anchor="middle" fill="#1b8a5a" font-size="18" font-weight="bold">calungaproject/plumbing</text>
+      <text x="680" y="80" text-anchor="middle" fill="#888" font-size="13">"HOW to build"</text>
+      <rect x="510" y="100" width="340" height="40" rx="8" fill="#0d1117" stroke="#333" stroke-width="1"/>
+      <text x="680" y="125" text-anchor="middle" fill="#53a8b6" font-size="14">builder/ (manylinux image, 20+ build stages)</text>
+      <rect x="510" y="155" width="340" height="40" rx="8" fill="#0d1117" stroke="#333" stroke-width="1"/>
+      <text x="680" y="180" text-anchor="middle" fill="#53a8b6" font-size="14">tasks/ (build-wheels, get-config, test)</text>
+      <rect x="510" y="210" width="340" height="40" rx="8" fill="#0d1117" stroke="#333" stroke-width="1"/>
+      <text x="680" y="235" text-anchor="middle" fill="#53a8b6" font-size="14">pipelines/ (wheel-integration-test)</text>
+      <rect x="510" y="265" width="340" height="25" rx="8" fill="#0d1117" stroke="#333" stroke-width="1"/>
+      <text x="680" y="283" text-anchor="middle" fill="#53a8b6" font-size="12">utils/ (twine, PEP 740 converter)</text>
+
+      <defs>
+        <marker id="arr" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#e94560"/>
+        </marker>
+        <marker id="arr-g" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#1b8a5a"/>
+        </marker>
+        <marker id="arr-x" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+        </marker>
+        <marker id="arr-o" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#c4721a"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+</section>
+
+<!-- SLIDE 4: End-to-End Flow (top row) -->
+<section>
+  <h2>End-to-End Flow</h2>
+  <div class="flow-container">
+    <div class="flow-box">
+      <div class="num">1</div>
+      <h4>Detect</h4>
+      <p>GitHub Action (every 12h) checks PyPI vs Pulp for new versions</p>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box">
+      <div class="num">2</div>
+      <h4>PR Created</h4>
+      <p>Auto-PR updates package JSON, auto-merge enabled</p>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box accent">
+      <div class="num">3</div>
+      <h4>Build</h4>
+      <p>Konflux: identify packages &rarr; Fromager builds from source &rarr; OCI artifact</p>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box">
+      <div class="num">4</div>
+      <h4>Scan</h4>
+      <p>Snyk, Coverity, ClamAV, ShellCheck, Unicode check</p>
+    </div>
+  </div>
+  <div class="flow-container" style="margin-top: 24px;">
+    <div class="flow-box">
+      <div class="num">5</div>
+      <h4>Merge &amp; Push</h4>
+      <p>PR merges, push event triggers final build with HEAD^ diff</p>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box green">
+      <div class="num">6</div>
+      <h4>Integration Test</h4>
+      <p>Install + import on UBI8/9/10, Fedora, Hummingbird, Ubuntu</p>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box">
+      <div class="num">7</div>
+      <h4>EC Validation</h4>
+      <p>Enterprise Contract checks Red Hat release policy</p>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-box green">
+      <div class="num">8</div>
+      <h4>Release</h4>
+      <p>Auto-release to Pulp at packages.redhat.com</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 5: Build Pipeline Detail -->
+<section>
+  <h2>Index Build Pipeline</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 950 380" xmlns="http://www.w3.org/2000/svg">
+      <rect x="20" y="160" width="110" height="55" rx="10" fill="#162447" stroke="#555" stroke-width="2"/>
+      <text x="75" y="192" text-anchor="middle" fill="#ccc" font-size="14">init</text>
+      <path d="M130 188 L155 188" stroke="#555" stroke-width="2" marker-end="url(#arr-x)"/>
+
+      <rect x="155" y="160" width="135" height="55" rx="10" fill="#162447" stroke="#555" stroke-width="2"/>
+      <text x="222" y="185" text-anchor="middle" fill="#ccc" font-size="13">clone-repository</text>
+      <text x="222" y="203" text-anchor="middle" fill="#666" font-size="10">git-clone-oci-ta</text>
+      <path d="M290 188 L318 188" stroke="#555" stroke-width="2" marker-end="url(#arr-x)"/>
+
+      <rect x="318" y="160" width="155" height="55" rx="10" fill="#162447" stroke="#c4721a" stroke-width="2"/>
+      <text x="395" y="183" text-anchor="middle" fill="#c4721a" font-size="13" font-weight="bold">identify-packages</text>
+      <text x="395" y="201" text-anchor="middle" fill="#888" font-size="10">git diff &rarr; package list</text>
+      <path d="M473 188 L500 188" stroke="#e94560" stroke-width="2" marker-end="url(#arr)"/>
+
+      <rect x="500" y="145" width="165" height="85" rx="10" fill="#162447" stroke="#e94560" stroke-width="3"/>
+      <text x="582" y="173" text-anchor="middle" fill="#e94560" font-size="14" font-weight="bold">build-wheels</text>
+      <text x="582" y="193" text-anchor="middle" fill="#888" font-size="11">Fromager + builder image</text>
+      <text x="582" y="210" text-anchor="middle" fill="#666" font-size="10">&rarr; OCI artifact (.whl)</text>
+      <text x="582" y="225" text-anchor="middle" fill="#555" font-size="9">20Gi memory</text>
+
+      <path d="M665 165 L720 95" stroke="#1b8a5a" stroke-width="1.5"/>
+      <path d="M665 178 L720 160" stroke="#1b8a5a" stroke-width="1.5"/>
+      <path d="M665 190 L720 225" stroke="#1b8a5a" stroke-width="1.5"/>
+      <path d="M665 200 L720 290" stroke="#1b8a5a" stroke-width="1.5"/>
+      <path d="M665 210 L720 350" stroke="#1b8a5a" stroke-width="1.5"/>
+
+      <rect x="720" y="72" width="200" height="36" rx="8" fill="#0d1117" stroke="#1b8a5a" stroke-width="1.5"/>
+      <text x="820" y="95" text-anchor="middle" fill="#1b8a5a" font-size="12">sast-snyk-check</text>
+      <rect x="720" y="140" width="200" height="36" rx="8" fill="#0d1117" stroke="#1b8a5a" stroke-width="1.5"/>
+      <text x="820" y="163" text-anchor="middle" fill="#1b8a5a" font-size="12">sast-coverity-check</text>
+      <rect x="720" y="208" width="200" height="36" rx="8" fill="#0d1117" stroke="#1b8a5a" stroke-width="1.5"/>
+      <text x="820" y="231" text-anchor="middle" fill="#1b8a5a" font-size="12">sast-shell-check</text>
+      <rect x="720" y="273" width="200" height="36" rx="8" fill="#0d1117" stroke="#1b8a5a" stroke-width="1.5"/>
+      <text x="820" y="296" text-anchor="middle" fill="#1b8a5a" font-size="12">sast-unicode-check</text>
+      <rect x="720" y="338" width="200" height="36" rx="8" fill="#0d1117" stroke="#1b8a5a" stroke-width="1.5"/>
+      <text x="820" y="361" text-anchor="middle" fill="#1b8a5a" font-size="12">clamav-scan</text>
+
+      <text x="395" y="240" text-anchor="middle" fill="#c4721a" font-size="10" font-style="italic">
+        skips build-wheels if no packages changed
+      </text>
+    </svg>
+  </div>
+</section>
+
+<!-- SLIDE 6: Plumbing Components & Nudges -->
+<section>
+  <h2>Plumbing: Component Dependency Chain</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg">
+      <rect x="50" y="30" width="230" height="75" rx="12" fill="#162447" stroke="#e94560" stroke-width="2"/>
+      <text x="165" y="58" text-anchor="middle" fill="#e94560" font-size="15" font-weight="bold">plumbing-builder</text>
+      <text x="165" y="78" text-anchor="middle" fill="#888" font-size="11">Container image (UBI8 manylinux)</text>
+      <text x="165" y="94" text-anchor="middle" fill="#666" font-size="10">builder/Containerfile</text>
+
+      <path d="M280 68 L390 68" stroke="#c4721a" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arr-o)"/>
+      <text x="335" y="58" text-anchor="middle" fill="#c4721a" font-size="10">nudge</text>
+
+      <rect x="390" y="30" width="230" height="75" rx="12" fill="#162447" stroke="#c4721a" stroke-width="2"/>
+      <text x="505" y="53" text-anchor="middle" fill="#c4721a" font-size="14" font-weight="bold">task-build-python-wheels</text>
+      <text x="505" y="73" text-anchor="middle" fill="#888" font-size="11">Tekton Bundle</text>
+      <text x="505" y="89" text-anchor="middle" fill="#666" font-size="10">build-python-wheels-oci-ta.yaml</text>
+
+      <path d="M620 68 L720 68" stroke="#c4721a" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arr-o)"/>
+      <text x="670" y="58" text-anchor="middle" fill="#c4721a" font-size="10">nudge</text>
+
+      <rect x="720" y="30" width="150" height="75" rx="12" fill="#162447" stroke="#1b8a5a" stroke-width="2"/>
+      <text x="795" y="58" text-anchor="middle" fill="#1b8a5a" font-size="15" font-weight="bold">index</text>
+      <text x="795" y="78" text-anchor="middle" fill="#888" font-size="11">Build pipeline</text>
+      <text x="795" y="94" text-anchor="middle" fill="#666" font-size="10">calungaproject/index</text>
+
+      <rect x="50" y="140" width="230" height="60" rx="12" fill="#162447" stroke="#555" stroke-width="2"/>
+      <text x="165" y="165" text-anchor="middle" fill="#53a8b6" font-size="14" font-weight="bold">plumbing-pipelines</text>
+      <text x="165" y="185" text-anchor="middle" fill="#888" font-size="11">Tekton Bundle (integration test)</text>
+
+      <rect x="50" y="230" width="230" height="60" rx="12" fill="#162447" stroke="#555" stroke-width="2"/>
+      <text x="165" y="255" text-anchor="middle" fill="#53a8b6" font-size="14" font-weight="bold">plumbing-utils</text>
+      <text x="165" y="275" text-anchor="middle" fill="#888" font-size="11">Container image (twine, PEP 740)</text>
+
+      <rect x="390" y="140" width="230" height="60" rx="12" fill="#162447" stroke="#555" stroke-width="2"/>
+      <text x="505" y="165" text-anchor="middle" fill="#53a8b6" font-size="14" font-weight="bold">task-get-config</text>
+      <text x="505" y="185" text-anchor="middle" fill="#888" font-size="11">Tekton Bundle (release config)</text>
+
+      <rect x="390" y="230" width="230" height="60" rx="12" fill="#162447" stroke="#555" stroke-width="2"/>
+      <text x="505" y="255" text-anchor="middle" fill="#53a8b6" font-size="14" font-weight="bold">task-push-py-pulp</text>
+      <text x="505" y="275" text-anchor="middle" fill="#888" font-size="11">Tekton Bundle (Pulp publishing)</text>
+
+      <rect x="700" y="150" width="170" height="100" rx="8" fill="#0d1117" stroke="#333" stroke-width="1"/>
+      <text x="785" y="172" text-anchor="middle" fill="#aaa" font-size="12" font-weight="bold">Legend</text>
+      <line x1="720" y1="192" x2="760" y2="192" stroke="#c4721a" stroke-width="2" stroke-dasharray="6,3"/>
+      <text x="770" y="196" fill="#c4721a" font-size="11">nudge (auto-PR)</text>
+      <line x1="720" y1="215" x2="760" y2="215" stroke="#e94560" stroke-width="2"/>
+      <text x="770" y="219" fill="#e94560" font-size="11">container image</text>
+      <line x1="720" y1="238" x2="760" y2="238" stroke="#53a8b6" stroke-width="2"/>
+      <text x="770" y="242" fill="#53a8b6" font-size="11">tekton bundle</text>
+    </svg>
+  </div>
+  <p class="center-note">
+    All 6 plumbing components live in one monorepo. CEL expressions trigger builds only when relevant paths change.
+  </p>
+</section>
+
+<!-- SLIDE 7: Builder Image Architecture -->
+<section>
+  <h2>Builder Image: 20+ Build Stages</h2>
+  <div class="two-col">
+    <div>
+      <h3>Source-Built Libraries</h3>
+      <table>
+        <tr><th>Library</th><th>Version</th><th>Used By</th></tr>
+        <tr><td>OpenSSL</td><td>3.5.4</td><td>cryptography, urllib3</td></tr>
+        <tr><td>Rust + Cargo</td><td>1.95.0</td><td>cryptography, pydantic-core</td></tr>
+        <tr><td>OpenBLAS</td><td>0.3.31</td><td>numpy, scipy</td></tr>
+        <tr><td>CPython</td><td>3.12.12</td><td>All wheels</td></tr>
+        <tr><td>libffi</td><td>3.5.2</td><td>cffi</td></tr>
+        <tr><td>libxml2</td><td>2.15.1</td><td>lxml</td></tr>
+        <tr><td>libxslt</td><td>1.1.45</td><td>lxml</td></tr>
+        <tr><td>libyaml</td><td>0.2.5</td><td>PyYAML</td></tr>
+        <tr><td>libjpeg-turbo</td><td>3.1.3</td><td>Pillow</td></tr>
+        <tr><td>zlib</td><td>1.3.1</td><td>Many</td></tr>
+        <tr><td>SQLite</td><td>3.51</td><td>aiosqlite</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Build Details</h3>
+      <ul>
+        <li>Base: <code>UBI8</code> (Red Hat Universal Base Image)</li>
+        <li>Policy: <code>manylinux_2_28</code></li>
+        <li>Compiler: <code>gcc-toolset-14</code></li>
+        <li>Cross-compilation: static clang support</li>
+        <li>All source tarballs verified by SHA256</li>
+        <li>Build time: ~45 min (8 CPU, 12Gi RAM)</li>
+      </ul>
+      <h3>Key Tools</h3>
+      <ul>
+        <li><strong>Fromager</strong> &mdash; dependency resolution + source wheel builds</li>
+        <li><strong>auditwheel</strong> &mdash; manylinux compliance</li>
+        <li><strong>cosign</strong> &mdash; signature verification</li>
+        <li><strong>cmake</strong> &mdash; C/C++ build system</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 8: Integration Testing -->
+<section>
+  <h2>Integration Testing Matrix</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+      <rect x="20" y="110" width="150" height="60" rx="10" fill="#162447" stroke="#e94560" stroke-width="2"/>
+      <text x="95" y="135" text-anchor="middle" fill="#e94560" font-size="13" font-weight="bold">Snapshot</text>
+      <text x="95" y="155" text-anchor="middle" fill="#888" font-size="10">Built wheel OCI artifacts</text>
+
+      <path d="M170 120 L280 40" stroke="#1b8a5a" stroke-width="1.5" marker-end="url(#arr-g)"/>
+      <path d="M170 128 L280 85" stroke="#1b8a5a" stroke-width="1.5" marker-end="url(#arr-g)"/>
+      <path d="M170 140 L280 140" stroke="#1b8a5a" stroke-width="1.5" marker-end="url(#arr-g)"/>
+      <path d="M170 148 L280 190" stroke="#1b8a5a" stroke-width="1.5" marker-end="url(#arr-g)"/>
+      <path d="M170 155 L280 238" stroke="#1b8a5a" stroke-width="1.5" marker-end="url(#arr-g)"/>
+      <path d="M170 160 L280 280" stroke="#1b8a5a" stroke-width="1.5" marker-end="url(#arr-g)"/>
+
+      <rect x="280" y="20" width="190" height="36" rx="8" fill="#0d1117" stroke="#1b8a5a" stroke-width="1.5"/>
+      <text x="375" y="43" text-anchor="middle" fill="#1b8a5a" font-size="13">UBI 8</text>
+      <rect x="280" y="66" width="190" height="36" rx="8" fill="#0d1117" stroke="#1b8a5a" stroke-width="1.5"/>
+      <text x="375" y="89" text-anchor="middle" fill="#1b8a5a" font-size="13">UBI 9</text>
+      <rect x="280" y="120" width="190" height="36" rx="8" fill="#0d1117" stroke="#1b8a5a" stroke-width="1.5"/>
+      <text x="375" y="143" text-anchor="middle" fill="#1b8a5a" font-size="13">UBI 10</text>
+      <rect x="280" y="170" width="190" height="36" rx="8" fill="#0d1117" stroke="#1b8a5a" stroke-width="1.5"/>
+      <text x="375" y="193" text-anchor="middle" fill="#1b8a5a" font-size="13">Fedora 43</text>
+      <rect x="280" y="218" width="190" height="36" rx="8" fill="#0d1117" stroke="#1b8a5a" stroke-width="1.5"/>
+      <text x="375" y="241" text-anchor="middle" fill="#1b8a5a" font-size="13">Hummingbird Python 3.12</text>
+      <rect x="280" y="266" width="190" height="36" rx="8" fill="#0d1117" stroke="#1b8a5a" stroke-width="1.5"/>
+      <text x="375" y="289" text-anchor="middle" fill="#1b8a5a" font-size="13">Ubuntu 24.04</text>
+
+      <rect x="530" y="60" width="340" height="180" rx="12" fill="#162447" stroke="#555" stroke-width="1"/>
+      <text x="700" y="90" text-anchor="middle" fill="#53a8b6" font-size="14" font-weight="bold">For each wheel:</text>
+      <text x="700" y="120" text-anchor="middle" fill="#ccc" font-size="13">1. Classify: empty / data-only / importable</text>
+      <text x="700" y="145" text-anchor="middle" fill="#ccc" font-size="13">2. Create fresh python3.12 venv</text>
+      <text x="700" y="170" text-anchor="middle" fill="#ccc" font-size="13">3. pip install --no-index (local only)</text>
+      <text x="700" y="195" text-anchor="middle" fill="#ccc" font-size="13">4. Import every detected module</text>
+      <text x="700" y="220" text-anchor="middle" fill="#ccc" font-size="13">5. Report PASS / FAIL / SKIP</text>
+    </svg>
+  </div>
+</section>
+
+<!-- SLIDE 9: Release Trigger -->
+<section>
+  <h2>Release Trigger</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg">
+      <rect x="20" y="70" width="125" height="55" rx="10" fill="#162447" stroke="#e94560" stroke-width="2"/>
+      <text x="82" y="93" text-anchor="middle" fill="#e94560" font-size="13" font-weight="bold">Build Pass</text>
+      <text x="82" y="112" text-anchor="middle" fill="#888" font-size="10">OCI wheel artifact</text>
+      <path d="M145 98 L172 98" stroke="#555" stroke-width="2" marker-end="url(#arr-x)"/>
+
+      <rect x="172" y="70" width="105" height="55" rx="10" fill="#162447" stroke="#555" stroke-width="2"/>
+      <text x="224" y="93" text-anchor="middle" fill="#ccc" font-size="13">Snapshot</text>
+      <text x="224" y="112" text-anchor="middle" fill="#888" font-size="10">created</text>
+      <path d="M277 98 L304 98" stroke="#555" stroke-width="2" marker-end="url(#arr-x)"/>
+
+      <rect x="304" y="70" width="125" height="55" rx="10" fill="#162447" stroke="#1b8a5a" stroke-width="2"/>
+      <text x="366" y="93" text-anchor="middle" fill="#1b8a5a" font-size="13" font-weight="bold">Tests Pass</text>
+      <text x="366" y="112" text-anchor="middle" fill="#888" font-size="10">6 OS targets</text>
+      <path d="M429 98 L456 98" stroke="#555" stroke-width="2" marker-end="url(#arr-x)"/>
+
+      <rect x="456" y="70" width="105" height="55" rx="10" fill="#162447" stroke="#c4721a" stroke-width="2"/>
+      <text x="508" y="93" text-anchor="middle" fill="#c4721a" font-size="13" font-weight="bold">EC Pass</text>
+      <text x="508" y="112" text-anchor="middle" fill="#888" font-size="10">policy check</text>
+      <path d="M561 98 L588 98" stroke="#e94560" stroke-width="3" marker-end="url(#arr)"/>
+
+      <rect x="588" y="55" width="290" height="85" rx="12" fill="#162447" stroke="#e94560" stroke-width="3"/>
+      <text x="733" y="83" text-anchor="middle" fill="#e94560" font-size="15" font-weight="bold">Auto-Release</text>
+      <text x="733" y="105" text-anchor="middle" fill="#ccc" font-size="12">&rarr; release engineering tenant</text>
+      <text x="733" y="125" text-anchor="middle" fill="#888" font-size="12">&rarr; calunga-push-to-pulp pipeline</text>
+
+      <text x="82" y="150" text-anchor="middle" fill="#666" font-size="10">Tekton Chains</text>
+      <text x="82" y="165" text-anchor="middle" fill="#666" font-size="10">SLSA attestation</text>
+    </svg>
+  </div>
+  <p style="font-size: 0.7em; text-align: center;">
+    <span class="highlight">ReleasePlan</span> with <code>auto-release: true</code> &nbsp;|&nbsp;
+    <span class="highlight">7-day grace period</span> &nbsp;|&nbsp;
+    Target: release engineering tenant &nbsp;|&nbsp;
+    SA: release service account
+  </p>
+</section>
+
+<!-- SLIDE 10: Release Pipeline Detail -->
+<section>
+  <h2>Release Pipeline: calunga-push-to-pulp</h2>
+  <p style="font-size: 0.6em; color: #888; margin-bottom: 6px;">
+    Lives in <code>konflux-ci/release-service-catalog</code> &mdash; managed by Red Hat release engineering
+  </p>
+  <div class="diagram">
+    <svg viewBox="0 0 950 310" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="r-arr" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#e94560"/>
+        </marker>
+        <marker id="r-arr-g" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#1b8a5a"/>
+        </marker>
+        <marker id="r-arr-x" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+        </marker>
+        <marker id="r-arr-o" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#c4721a"/>
+        </marker>
+      </defs>
+
+      <!-- Row 1: linear chain across the top -->
+      <rect x="10" y="5" width="110" height="40" rx="8" fill="#162447" stroke="#555" stroke-width="1.5"/>
+      <text x="65" y="22" text-anchor="middle" fill="#ccc" font-size="10" font-weight="bold">collect-data</text>
+      <text x="65" y="37" text-anchor="middle" fill="#888" font-size="8">Release + Snapshot</text>
+
+      <path d="M120 25 L145 25" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#r-arr-x)"/>
+
+      <rect x="145" y="5" width="120" height="40" rx="8" fill="#162447" stroke="#555" stroke-width="1.5"/>
+      <text x="205" y="22" text-anchor="middle" fill="#ccc" font-size="10" font-weight="bold">reduce-snapshot</text>
+      <text x="205" y="37" text-anchor="middle" fill="#888" font-size="8">Filter components</text>
+
+      <path d="M265 25 L290 25" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#r-arr-x)"/>
+
+      <rect x="290" y="2" width="175" height="48" rx="8" fill="#162447" stroke="#c4721a" stroke-width="2"/>
+      <text x="377" y="19" text-anchor="middle" fill="#c4721a" font-size="10" font-weight="bold">verify-enterprise-contract</text>
+      <text x="377" y="33" text-anchor="middle" fill="#888" font-size="8">registry-calunga-prod policy</text>
+      <text x="377" y="44" text-anchor="middle" fill="#666" font-size="7">strict mode, ignore Rekor</text>
+
+      <path d="M465 25 L495 25" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#r-arr-x)"/>
+
+      <rect x="495" y="2" width="175" height="48" rx="8" fill="#162447" stroke="#e94560" stroke-width="2"/>
+      <text x="582" y="16" text-anchor="middle" fill="#e94560" font-size="10" font-weight="bold">extract-py-artifacts</text>
+      <text x="582" y="30" text-anchor="middle" fill="#ccc" font-size="8">Pull OCI wheels (oras)</text>
+      <text x="582" y="41" text-anchor="middle" fill="#ccc" font-size="8">Parse SBOMs, fetch SLSA provenance</text>
+
+      <!-- Branch down from collect-data to collect-atlas-params -->
+      <path d="M65 45 L65 75" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#r-arr-x)"/>
+
+      <rect x="10" y="75" width="120" height="35" rx="8" fill="#162447" stroke="#555" stroke-width="1.5"/>
+      <text x="70" y="90" text-anchor="middle" fill="#ccc" font-size="9" font-weight="bold">collect-atlas-params</text>
+      <text x="70" y="103" text-anchor="middle" fill="#888" font-size="8">TPA API + SSO creds</text>
+
+      <!-- Path from extract-py-artifacts down-left to upload-sboms -->
+      <path d="M495 42 L495 78 L300 78 L300 100" stroke="#1b8a5a" stroke-width="1.5" fill="none" marker-end="url(#r-arr-g)"/>
+      <!-- collect-atlas-params feeds into upload-sboms -->
+      <path d="M130 92 L175 92 L175 100" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#r-arr-x)"/>
+
+      <rect x="145" y="100" width="210" height="45" rx="8" fill="#162447" stroke="#1b8a5a" stroke-width="2"/>
+      <text x="250" y="117" text-anchor="middle" fill="#1b8a5a" font-size="10" font-weight="bold">upload-sboms-to-atlas</text>
+      <text x="250" y="132" text-anchor="middle" fill="#ccc" font-size="8">Extract wheel SBOMs &rarr; Red Hat Atlas/TPA</text>
+
+      <!-- Path from extract-py-artifacts straight down to rh-sign -->
+      <path d="M620 50 L620 100" stroke="#e94560" stroke-width="2" fill="none" marker-end="url(#r-arr)"/>
+
+      <rect x="495" y="100" width="220" height="45" rx="8" fill="#162447" stroke="#e94560" stroke-width="3"/>
+      <text x="605" y="117" text-anchor="middle" fill="#e94560" font-size="11" font-weight="bold">rh-sign-python-wheels</text>
+      <text x="605" y="133" text-anchor="middle" fill="#ccc" font-size="9">AWS KMS cosign &rarr; PEP 740 attestations</text>
+
+      <!-- Path down to push-py-pulp -->
+      <path d="M605 145 L605 170" stroke="#e94560" stroke-width="2" fill="none" marker-end="url(#r-arr)"/>
+
+      <rect x="495" y="170" width="220" height="45" rx="8" fill="#162447" stroke="#e94560" stroke-width="3"/>
+      <text x="605" y="187" text-anchor="middle" fill="#e94560" font-size="11" font-weight="bold">push-py-pulp</text>
+      <text x="605" y="203" text-anchor="middle" fill="#ccc" font-size="9">Wheels + attestations &rarr; packages.redhat.com</text>
+
+      <!-- Path down to create-advisory -->
+      <path d="M605 215 L605 240" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#r-arr-x)"/>
+
+      <rect x="495" y="240" width="220" height="40" rx="8" fill="#162447" stroke="#c4721a" stroke-width="2"/>
+      <text x="605" y="256" text-anchor="middle" fill="#c4721a" font-size="10" font-weight="bold">create-advisory</text>
+      <text x="605" y="271" text-anchor="middle" fill="#888" font-size="8">RHSA-style advisory (product RHTL, CPE:1054)</text>
+
+      <!-- Key Config box -->
+      <rect x="10" y="180" width="170" height="100" rx="8" fill="#0d1117" stroke="#333" stroke-width="1"/>
+      <text x="95" y="198" text-anchor="middle" fill="#aaa" font-size="10" font-weight="bold">Key Config</text>
+      <text x="20" y="215" fill="#888" font-size="8">Pulp domain: public-trusted-libraries</text>
+      <text x="20" y="230" fill="#888" font-size="8">Signing: AWS KMS + cosign</text>
+      <text x="20" y="245" fill="#888" font-size="8">Timeouts: 2h pipeline / 1h task</text>
+      <text x="20" y="260" fill="#888" font-size="8">Product stream: rhtl-1</text>
+      <text x="20" y="275" fill="#888" font-size="8">SA: release-pulp-calunga-prod</text>
+
+      <!-- Finally label -->
+      <rect x="755" y="5" width="180" height="35" rx="8" fill="#0d1117" stroke="#333" stroke-width="1"/>
+      <text x="845" y="19" text-anchor="middle" fill="#888" font-size="9" font-weight="bold">finally:</text>
+      <text x="845" y="33" text-anchor="middle" fill="#666" font-size="8">cleanup-internal-requests</text>
+    </svg>
+  </div>
+</section>
+
+<!-- SLIDE 11: Consumer Experience -->
+<section>
+  <h2>How Users Consume It</h2>
+  <div class="two-col">
+    <div>
+      <h3>pip</h3>
+      <pre><code># pip.conf
+[global]
+index-url = https://&lt;user&gt;:&lt;token&gt;@\
+  packages.redhat.com/\
+  trusted-libraries/python/
+
+# Then just:
+pip install numpy
+pip install -r requirements.txt</code></pre>
+      <h3>Verify Attestations</h3>
+      <pre><code>pip download numpy==2.3.3
+unzip numpy-*.whl -d extracted
+cat extracted/numpy-*.dist-info/\
+  sboms/redhat.spdx.json</code></pre>
+    </div>
+    <div>
+      <h3>uv</h3>
+      <pre><code># pyproject.toml
+[[tool.uv.index]]
+name = "trusted-libraries"
+url = "https://packages.redhat.com/\
+  trusted-libraries/python"
+default = true
+
+# Environment variables
+UV_INDEX_..._USERNAME=&lt;user&gt;
+UV_INDEX_..._PASSWORD=&lt;token&gt;</code></pre>
+      <h3>Support Matrix</h3>
+      <table>
+        <tr><td>Python</td><td>3.12 (3.11, 3.13, 3.14 planned)</td></tr>
+        <tr><td>Arch</td><td>x86_64 (aarch64 planned)</td></tr>
+        <tr><td>manylinux</td><td>manylinux_2_28</td></tr>
+        <tr><td>Packages</td><td>1035+</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+</div><!-- .slides -->
+</div><!-- .reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.min.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: true,
+    transition: 'slide',
+    backgroundTransition: 'fade',
+    center: true,
+    width: 1200,
+    height: 700,
+    margin: 0.04,
+  });
+</script>
+</body>
+</html>

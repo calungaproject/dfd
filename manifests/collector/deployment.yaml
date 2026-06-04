@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dfd-collector
+  namespace: dfd
+  labels:
+    app: dfd
+    component: collector
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: dfd
+      component: collector
+  template:
+    metadata:
+      labels:
+        app: dfd
+        component: collector
+    spec:
+      serviceAccountName: dfd
+      terminationGracePeriodSeconds: 300
+      initContainers:
+        - name: run-migrations
+          image: <YOUR_REGISTRY>/dfd:latest
+          command: ["python", "scripts/migrate.py"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-database
+                  key: url
+      containers:
+        - name: collector
+          image: <YOUR_REGISTRY>/dfd:latest
+          command: ["python", "-m", "dfd.collector.main"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-database
+                  key: url
+            - name: KUBEARCHIVE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-kubearchive
+                  key: base-url
+            - name: KUBEARCHIVE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-kubearchive
+                  key: token
+            - name: GOOGLE_CLOUD_PROJECT
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-vertex-ai
+                  key: project-id
+            - name: GOOGLE_CLOUD_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-vertex-ai
+                  key: region
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/run/secrets/gcp/credentials.json
+            - name: S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-aws-s3
+                  key: bucket
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-aws-credentials
+                  key: access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-aws-credentials
+                  key: secret-access-key
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: dfd-aws-s3
+                  key: region
+            - name: CLAUDE_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: dfd-config
+                  key: CLAUDE_MODEL
+            - name: COLLECT_INTERVAL_HOURS
+              valueFrom:
+                configMapKeyRef:
+                  name: dfd-config
+                  key: COLLECT_INTERVAL_HOURS
+            - name: COLLECT_HOURS_BACK
+              valueFrom:
+                configMapKeyRef:
+                  name: dfd-config
+                  key: COLLECT_HOURS_BACK
+            - name: MAX_PARALLEL_SPECIALISTS
+              valueFrom:
+                configMapKeyRef:
+                  name: dfd-config
+                  key: MAX_PARALLEL_SPECIALISTS
+            - name: ENABLED_PIPELINE_TYPES
+              valueFrom:
+                configMapKeyRef:
+                  name: dfd-config
+                  key: ENABLED_PIPELINE_TYPES
+            - name: THINKING_BUDGET_TOKENS
+              valueFrom:
+                configMapKeyRef:
+                  name: dfd-config
+                  key: THINKING_BUDGET_TOKENS
+          volumeMounts:
+            - name: gcp-credentials
+              mountPath: /var/run/secrets/gcp
+              readOnly: true
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+      volumes:
+        - name: gcp-credentials
+          secret:
+            secretName: dfd-gcp-credentials
