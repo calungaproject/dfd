@@ -15,5 +15,7 @@ resources:
   - api/route.yaml
   - collector/deployment.yaml
 
-commonLabels:
-  app.kubernetes.io/part-of: dfd
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: dfd
+    includeSelectors: false
