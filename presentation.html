@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFD — Dumpster Fire Diving</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css">
+<style>
+  :root { --r-heading-color: #ff6b35; --r-link-color: #4fc3f7; }
+  .reveal { font-size: 32px; }
+  .reveal h1, .reveal h2, .reveal h3 { text-transform: none; }
+  .reveal h1 { font-size: 2.2em; }
+  .reveal h2 { font-size: 1.5em; color: #ff6b35; }
+  .reveal h3 { font-size: 1.1em; color: #aaa; }
+  .reveal code { color: #4fc3f7; background: #1a1a2e; padding: 2px 8px; border-radius: 4px; font-size: 0.85em; }
+  .reveal pre { box-shadow: none; }
+  .reveal pre code { padding: 16px; font-size: 0.55em; line-height: 1.5; max-height: 500px; }
+  .emoji { font-size: 1.4em; }
+  .flow-box { background: #1a1a2e; border-radius: 8px; padding: 15px 20px; margin: 8px 0; text-align: left; font-size: 0.75em; border-left: 3px solid #ff6b35; }
+  .flow-arrow { color: #ff6b35; font-size: 1.5em; margin: 4px 0; }
+  .phase { display: inline-block; background: #ff6b35; color: #000; padding: 2px 10px; border-radius: 4px; font-weight: bold; font-size: 0.8em; margin-right: 8px; }
+  .highlight { color: #4fc3f7; }
+  .dim { color: #888; font-size: 0.7em; }
+  ul.compact { font-size: 0.8em; }
+  ul.compact li { margin-bottom: 8px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; text-align: left; }
+  .two-col ul { font-size: 0.7em; }
+  .badge { display: inline-block; background: #2a2a4a; padding: 4px 12px; border-radius: 20px; font-size: 0.6em; margin: 3px; }
+  .badge.green { border: 1px solid #4caf50; color: #4caf50; }
+  .badge.blue { border: 1px solid #4fc3f7; color: #4fc3f7; }
+  .badge.orange { border: 1px solid #ff6b35; color: #ff6b35; }
+  .badge.purple { border: 1px solid #ce93d8; color: #ce93d8; }
+  .agent-card { background: #1a1a2e; border-radius: 8px; padding: 12px 16px; margin: 6px 0; text-align: left; font-size: 0.7em; border-left: 3px solid #4fc3f7; }
+  .agent-card strong { color: #ff6b35; }
+  .arch-box { background: #1a1a2e; border-radius: 10px; padding: 18px; text-align: left; font-size: 0.65em; font-family: monospace; line-height: 1.6; white-space: pre; }
+  .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+  .feature-card { background: #1a1a2e; border-radius: 8px; padding: 14px; text-align: left; font-size: 0.65em; }
+  .feature-card strong { color: #ff6b35; display: block; margin-bottom: 4px; }
+  .feature-card span { color: #ccc; }
+  .tab-bar { display: flex; gap: 6px; margin-bottom: 12px; }
+  .tab-item { background: #2a2a4a; color: #ccc; padding: 6px 14px; border-radius: 6px 6px 0 0; font-size: 0.65em; }
+  .tab-item.active { background: #ff6b35; color: #000; font-weight: bold; }
+  .cost-row { display: flex; justify-content: space-between; background: #1a1a2e; padding: 10px 16px; border-radius: 6px; margin: 4px 0; font-size: 0.7em; }
+  .cost-label { color: #ccc; }
+  .cost-value { color: #4fc3f7; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- Title -->
+<section>
+  <h1>DFD</h1>
+  <h2 style="color:#ccc;">Dumpster Fire Diving</h2>
+  <p class="dim" style="font-size:0.8em; margin-top:30px;">Automated pipeline failure analysis for Red Hat Trusted Libraries<br>with multi-agent AI, self-evolving taxonomy, and interactive chatbot</p>
+  <div style="margin-top: 25px;">
+    <span class="badge orange">4 pipeline types monitored</span>
+    <span class="badge blue">3 specialized AI agents</span>
+    <span class="badge green">14 chatbot tools</span>
+    <span class="badge purple">auto-evolving taxonomy</span>
+  </div>
+</section>
+
+<!-- Problem -->
+<section>
+  <h2>The Problem</h2>
+  <ul class="compact">
+    <li>Calunga (Red Hat Trusted Libraries) pipelines fail across <strong>build, integration test, EC, and release</strong></li>
+    <li>Root cause analysis is <strong>manual</strong> and <strong>time-consuming</strong></li>
+    <li>Failures come from many sources: infra, flakes, builds, releases...</li>
+    <li>No historical view &mdash; same issues keep recurring unnoticed</li>
+    <li>No way to search across failures or find patterns</li>
+    <li>Classification categories drift &mdash; no systematic taxonomy management</li>
+  </ul>
+</section>
+
+<!-- Solution -->
+<section>
+  <h2>The Solution</h2>
+  <p style="font-size:1.0em; margin-top:30px;">
+    An OpenShift-native system that<br>
+    <span class="highlight">fetches failed pipelines</span> from KubeArchive,<br>
+    runs <span class="highlight">multi-agent AI analysis</span>,<br>
+    builds a <span class="highlight">self-evolving taxonomy</span>,<br>
+    and serves a <span class="highlight">React dashboard with AI chatbot</span>.
+  </p>
+  <div style="margin-top: 25px;">
+    <span class="badge orange">Build</span>
+    <span class="badge orange">Integration Test</span>
+    <span class="badge orange">Enterprise Contract</span>
+    <span class="badge orange">Release</span>
+  </div>
+  <p class="dim" style="margin-top:10px;">All 4 Calunga pipeline types &mdash; from Fromager wheel builds to Pulp publishing</p>
+</section>
+
+<!-- Architecture -->
+<section>
+  <h2>Architecture</h2>
+  <div class="arch-box">
+<span style="color:#ff6b35;">Collector</span> (scheduled every 24h + API-triggered)
++-----------------------------+
+| dfd-collector               |
+|  1. Query KubeArchive       |--- uploads ---> <span style="color:#4fc3f7;">AWS S3</span>
+|  2. Download logs/artifacts |                (full archives)
+|  3. Multi-agent analysis    |--- Claude ---> <span style="color:#ce93d8;">Vertex AI</span>
+|  4. Process rule proposals  |                (Sonnet 4.6)
+|  5. Consolidate novel roots |
++-------------+---------------+
+              | writes
+              v
+        <span style="color:#4caf50;">PostgreSQL 16</span>  (artifacts, analyses, taxonomy, chat, costs)
+              |
+         <span style="color:#ff6b35;">dfd-api</span> (FastAPI) -----> <span style="color:#4fc3f7;">React 19 + PatternFly 6</span>
+              |                        +-- Overview (charts + stats)
+              |                        +-- Taxonomy management
+              |                        +-- Analysis runs + costs
+              +<--- streaming SSE ---  +-- AI Chatbot (Claude)
+  </div>
+</section>
+
+<!-- Nightly Pipeline -->
+<section>
+  <h2>Collection Pipeline</h2>
+  <div class="flow-box">
+    <span class="phase">1. Collect</span>
+    Query KubeArchive per pipeline type (48h window) &rarr; download logs, TaskRun JSON, metadata<br>
+    <span class="dim">Key artifacts to DB, full archives to S3. Skips already-known runs.</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-box">
+    <span class="phase">2. Analyze</span>
+    Multi-agent pipeline per failure (asyncio, 5 concurrent)<br>
+    <span class="dim">Manager triage &rarr; Specialists (parallel) &rarr; Manager Synthesis</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-box">
+    <span class="phase">3. Evolve</span>
+    Consolidate proposals &rarr; consolidate novel root causes &rarr; update taxonomy<br>
+    <span class="dim">Novel patterns auto-promoted to taxonomy after 3+ occurrences in 90 days</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-box">
+    <span class="phase">4. Re-analyze</span>
+    Queue unknowns for re-analysis with updated taxonomy<br>
+    <span class="dim">Full history preserved &mdash; <code>analysis_version</code> increments, all versions viewable</span>
+  </div>
+</section>
+
+<!-- Multi-Agent Pipeline -->
+<section>
+  <h2>Multi-Agent Analysis</h2>
+  <p style="font-size:0.75em; margin-bottom:15px;">Each failure is analyzed by a team of specialized AI agents:</p>
+  <div class="agent-card"><strong>1. Manager / Triage</strong> &mdash; reads metadata + logs, forms hypothesis, selects 0&ndash;2 specialists via tool call</div>
+  <div class="agent-card"><strong>2. Log Analyst</strong> &mdash; deep log analysis: compilation errors, Fromager output, pip/setuptools failures, timeout/OOM patterns, import errors</div>
+  <div class="agent-card"><strong>2. Historical Analyst</strong> &mdash; cross-analysis comparison, validates against past data, detects over-broad categories, identifies trends</div>
+  <div class="agent-card"><strong>3. Manager / Synthesis</strong> &mdash; reads full investigation board, resolves conflicts, produces final classification + optional rule proposal</div>
+  <p style="font-size:0.65em; color:#888; margin-top:10px;">
+    Simple failures: 2 API calls &mdash; Complex failures: 4 API calls<br>
+    All agents use <strong>extended thinking</strong> (10k tokens) for reasoning chains<br>
+    Agents communicate via shared <strong>investigation board</strong> in DB
+  </p>
+</section>
+
+<!-- Self-Evolving Taxonomy -->
+<section>
+  <h2>Self-Evolving Taxonomy</h2>
+  <div class="flow-box">
+    <span class="phase">Propose</span>
+    Synthesis agent proposes new rules when it discovers novel patterns<br>
+    <span class="dim">Claude-assisted semantic deduplication &mdash; groups similar proposals into canonical labels</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-box" style="border-left-color: #ce93d8;">
+    <span class="phase" style="background: #ce93d8;">Novel Tracking</span>
+    Classifications not matching any rule are flagged as <strong>novel</strong> (<code>taxonomy_matched = false</code>)<br>
+    <span class="dim">Shown as purple labels with * prefix in the dashboard</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-box" style="border-left-color: #ce93d8;">
+    <span class="phase" style="background: #ce93d8;">Auto-Consolidation</span>
+    Claude groups semantically similar novel root causes across 90-day window<br>
+    <span class="dim">Groups with 3+ distinct pipeline runs &rarr; auto-promoted to taxonomy rules</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-box">
+    <span class="phase">Re-analyze</span>
+    New rules trigger re-analysis of unknowns &amp; affected failures<br>
+    <span class="dim">Full history preserved &mdash; all analysis versions viewable in dashboard</span>
+  </div>
+</section>
+
+<!-- Dashboard -->
+<section>
+  <h2>Dashboard</h2>
+  <p style="font-size:0.7em; margin-bottom: 12px;">React 19 + TypeScript + PatternFly 6 &mdash; built with Vite, served as static files from FastAPI</p>
+  <div class="tab-bar">
+    <span class="tab-item active">Overview</span>
+    <span class="tab-item">Taxonomy</span>
+    <span class="tab-item">Analysis Runs</span>
+    <span class="tab-item">Costs</span>
+  </div>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <strong>Overview</strong>
+      <span>Stats cards, daily stacked bar chart, root cause distribution, component/status filters, filterable run cards with confidence badges, expandable AI reasoning</span>
+    </div>
+    <div class="feature-card">
+      <strong>Taxonomy</strong>
+      <span>Rules table with expandable investigation recipes, accept/reject proposals, rule merge/edit/delete, origin tracking (manual vs auto)</span>
+    </div>
+    <div class="feature-card">
+      <strong>Analysis Runs</strong>
+      <span>Batch run history, cost per run, re-analysis queue status, error tracking</span>
+    </div>
+    <div class="feature-card">
+      <strong>Costs</strong>
+      <span>LLM cost by invocation type, daily breakdown, per-call detail with token counts + cache stats</span>
+    </div>
+  </div>
+  <p style="font-size:0.6em; color:#888; margin-top:10px;">+ collapsible AI chatbot panel on the right &mdash; "Ask AI" button on every failed run</p>
+</section>
+
+<!-- AI Chatbot -->
+<section>
+  <h2>AI Chatbot</h2>
+  <p style="font-size:0.8em; margin-bottom:15px;">Interactive Claude-powered assistant in the dashboard:</p>
+  <div class="two-col">
+    <div>
+      <h3 style="color:#ff6b35;">Capabilities</h3>
+      <ul>
+        <li>Investigate specific failures ("Why did run X fail?")</li>
+        <li>Cross-failure pattern analysis ("What's trending?")</li>
+        <li>Read raw logs and artifacts on demand</li>
+        <li>Browse S3 archives for deep investigation</li>
+        <li>View full multi-agent conversation logs</li>
+        <li>Manage taxonomy: accept/reject proposals, merge/edit/delete rules</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="color:#ff6b35;">Implementation</h3>
+      <ul>
+        <li>Claude Sonnet 4.6 via Vertex AI</li>
+        <li>14 tools (query, read, search, taxonomy CRUD...)</li>
+        <li>Tool-use loop (max 15 iterations)</li>
+        <li>SSE streaming with keepalive</li>
+        <li>Session persistence in PostgreSQL</li>
+        <li>Per-conversation cost tracking</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CI/CD -->
+<section>
+  <h2>CI/CD &amp; Deployment</h2>
+  <div class="flow-box">
+    <span class="phase">Build</span>
+    Push to <code>main</code> triggers Konflux build pipeline (Tekton PipelineRun)<br>
+    <span class="dim">Multi-stage image: Node.js 22 (React SPA) &rarr; UBI9 Python 3.12 &mdash; CEL expression skips builds when only <code>manifests/</code> change</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-box" style="border-left-color: #888; opacity: 0.6;">
+    <span class="phase" style="background: #888;">Release</span>
+    Konflux release pipeline validates &amp; publishes the image<br>
+    <span class="dim">Not yet implemented &mdash; currently manual image deployment</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-box" style="border-left-color: #888; opacity: 0.6;">
+    <span class="phase" style="background: #888;">Nudge</span>
+    Mintmaker updates image digests in <code>manifests/overlays/production/</code><br>
+    <span class="dim">Not yet implemented &mdash; will auto-update kustomize image references</span>
+  </div>
+  <div class="flow-arrow">&darr;</div>
+  <div class="flow-box">
+    <span class="phase">Deploy</span>
+    ArgoCD auto-syncs from <code>manifests/overlays/production/</code> (prune + self-heal)<br>
+    <span class="dim">Kustomize base/overlays &mdash; <code>dfd-api</code> + <code>dfd-collector</code> Deployments, PostgreSQL StatefulSet</span>
+  </div>
+</section>
+
+<!-- Tech Stack -->
+<section>
+  <h2>Tech Stack</h2>
+  <div class="two-col">
+    <div>
+      <p style="color:#ff6b35; font-size:0.85em;">AI / Analysis</p>
+      <ul>
+        <li>Claude Sonnet 4.6 via Vertex AI</li>
+        <li>Extended thinking (10k token budget)</li>
+        <li>Prompt caching for batch efficiency</li>
+        <li>Tool-use protocol for structured output</li>
+      </ul>
+      <p style="color:#ff6b35; font-size:0.85em; margin-top:15px;">Data Source</p>
+      <ul>
+        <li>KubeArchive API (PipelineRuns, TaskRuns, pod logs)</li>
+      </ul>
+    </div>
+    <div>
+      <p style="color:#ff6b35; font-size:0.85em;">Infrastructure</p>
+      <ul>
+        <li>OpenShift + ArgoCD (GitOps, auto-sync)</li>
+        <li>Kustomize (base + production overlay)</li>
+        <li>PostgreSQL 16 + AWS S3</li>
+        <li>Konflux CI (Tekton) + Quay.io</li>
+        <li>UBI9 / Python 3.12 containers</li>
+      </ul>
+      <p style="color:#ff6b35; font-size:0.85em; margin-top:15px;">Dashboard</p>
+      <ul>
+        <li>React 19 + TypeScript (strict)</li>
+        <li>PatternFly 6 (Red Hat design system)</li>
+        <li>TanStack Query (data fetching)</li>
+        <li>Vite (build) + SSE (chat streaming)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Cost -->
+<section>
+  <h2>Cost Tracking</h2>
+  <p style="font-size:0.75em; margin-bottom:15px;">Every LLM call is tracked with full token breakdown:</p>
+  <div class="cost-row"><span class="cost-label">Analysis (per failure)</span><span class="cost-value">~$0.06&ndash;0.13</span></div>
+  <div class="cost-row"><span class="cost-label">Daily batch (varies by failure count)</span><span class="cost-value">~$0.40&ndash;2.80</span></div>
+  <div class="cost-row"><span class="cost-label">Chat message (with tool use)</span><span class="cost-value">~$0.02</span></div>
+  <div class="cost-row"><span class="cost-label">Taxonomy consolidation</span><span class="cost-value">~$0.04</span></div>
+  <div class="cost-row"><span class="cost-label">Total (30-day observed)</span><span class="cost-value">~$25</span></div>
+  <p style="font-size:0.65em; color:#888; margin-top:15px;">
+    Tracked per invocation: model, input/output/cache tokens, duration, cost<br>
+    Dashboard shows daily trends, per-type breakdown, and recent calls<br>
+    Prompt caching reduces costs significantly for batch analysis
+  </p>
+</section>
+
+<!-- What's Next -->
+<section>
+  <h2>What's Next</h2>
+  <ul class="compact">
+    <li>Scheduled re-analysis &mdash; periodic review of older classifications with evolved taxonomy</li>
+    <li>Alerting &mdash; Slack notifications for novel recurring patterns</li>
+    <li>Cross-pipeline-type correlation &mdash; detect shared infrastructure failures across build/test/release</li>
+    <li>Taxonomy health dashboard &mdash; coverage, staleness, confidence distribution</li>
+    <li>Agent tool access &mdash; give specialists direct access to artifacts and S3</li>
+  </ul>
+</section>
+
+<!-- End -->
+<section>
+  <h1><span class="emoji">&#x1F525;</span></h1>
+  <h2 style="color:#ccc;">Questions?</h2>
+  <p style="font-size:0.7em; margin-top:30px; color:#888;">
+    <code>github.com/calungaproject/dfd</code>
+  </p>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script>
+Reveal.initialize({
+  hash: true,
+  transition: 'slide',
+  controls: true,
+  progress: true,
+  center: true,
+  width: 1200,
+  height: 700
+});
+</script>
+</body>
+</html>
