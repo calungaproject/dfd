@@ -10,6 +10,7 @@ images:
   - name: dfd
     newName: quay.io/calungaproject/dfd
     newTag: latest
+    digest: sha256:91a93dc89066996702e012056f11080ef84cf3c830f973fca269826b126c05fe
 
 patches:
   - path: patches/configmap-values.yaml

@@ -5,13 +5,8 @@
   ],
   "dependencyDashboard": false,
   "enabledManagers": [
-    "kubernetes"
+    "kustomize"
   ],
-  "kubernetes": {
-    "fileMatch": [
-      "^manifests/.+\\.yaml$"
-    ]
-  },
   "packageRules": [
     {
       "description": "Track and auto-merge dfd image digest updates",
