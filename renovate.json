@@ -1,0 +1,26 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "dependencyDashboard": false,
+  "enabledManagers": [
+    "kubernetes"
+  ],
+  "kubernetes": {
+    "fileMatch": [
+      "^manifests/.+\\.yaml$"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": "Track and auto-merge dfd image digest updates",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["quay.io/calungaproject/dfd"],
+      "matchUpdateTypes": ["digest", "pin"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    }
+  ]
+}

@@ -23,7 +23,7 @@ spec:
       terminationGracePeriodSeconds: 300
       initContainers:
         - name: run-migrations
-          image: dfd:latest
+          image: quay.io/calungaproject/dfd:latest@sha256:91a93dc89066996702e012056f11080ef84cf3c830f973fca269826b126c05fe
           command: ["python", "scripts/migrate.py"]
           env:
             - name: DATABASE_URL
@@ -32,7 +32,7 @@ spec:
                   name: dfd-database
                   key: url
         - name: load-pipeline-types
-          image: dfd:latest
+          image: quay.io/calungaproject/dfd:latest@sha256:91a93dc89066996702e012056f11080ef84cf3c830f973fca269826b126c05fe
           command: ["python", "scripts/load_pipeline_types.py", "--config", "/etc/dfd/pipeline_types.yaml"]
           env:
             - name: DATABASE_URL
@@ -46,7 +46,7 @@ spec:
               readOnly: true
       containers:
         - name: collector
-          image: dfd:latest
+          image: quay.io/calungaproject/dfd:latest@sha256:91a93dc89066996702e012056f11080ef84cf3c830f973fca269826b126c05fe
           command: ["python", "-m", "dfd.collector.main"]
           env:
             - name: DATABASE_URL
