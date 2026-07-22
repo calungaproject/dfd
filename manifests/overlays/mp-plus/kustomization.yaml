@@ -4,13 +4,15 @@ kind: Kustomization
 resources:
   - ../../base
 
-namespace: dfd
+namespace: calunga--runtime-int
 
 images:
   - name: dfd
     newName: quay.io/calungaproject/dfd
     newTag: latest
-    digest: sha256:91a93dc89066996702e012056f11080ef84cf3c830f973fca269826b126c05fe
+    digest: sha256:69228fba0b269cbe62d538213a52bc5adf4a377067992325f3ded2a48b2cc937
 
 patches:
   - path: patches/configmap-values.yaml
+  - path: patches/storage-class.yaml
+  - path: patches/proxy-env.yaml

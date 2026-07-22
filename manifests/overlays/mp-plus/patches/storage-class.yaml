@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dfd-postgresql-data
+  annotations:
+    trident.netapp.io/reclaimPolicy: Retain
+  labels:
+    paas.redhat.com/appcode: RHPI-001
+spec:
+  storageClassName: netapp-iscsi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dfd-postgresql-backups
+  annotations:
+    trident.netapp.io/reclaimPolicy: Retain
+  labels:
+    paas.redhat.com/appcode: RHPI-001
+spec:
+  storageClassName: netapp-nfs
