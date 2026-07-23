@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dfd-api
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          env:
+            - name: HTTPS_PROXY
+              value: "http://proxy.squi-001.prod.iad2.dc.redhat.com:3128"
+            - name: HTTP_PROXY
+              value: "http://proxy.squi-001.prod.iad2.dc.redhat.com:3128"
+            - name: NO_PROXY
+              value: ".svc,.cluster.local,10.0.0.0/8,172.0.0.0/8,api.stone-prod-p01.wcfb.p1.openshiftapps.com"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dfd-collector
+spec:
+  template:
+    spec:
+      containers:
+        - name: collector
+          env:
+            - name: HTTPS_PROXY
+              value: "http://proxy.squi-001.prod.iad2.dc.redhat.com:3128"
+            - name: HTTP_PROXY
+              value: "http://proxy.squi-001.prod.iad2.dc.redhat.com:3128"
+            - name: NO_PROXY
+              value: ".svc,.cluster.local,10.0.0.0/8,172.0.0.0/8,api.stone-prod-p01.wcfb.p1.openshiftapps.com"

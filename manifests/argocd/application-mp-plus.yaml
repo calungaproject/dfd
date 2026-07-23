@@ -2,29 +2,26 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: dfd
-  namespace: openshift-gitops
+  namespace: calunga--runtime-int
   labels:
     app.kubernetes.io/part-of: dfd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
 
   source:
     repoURL: https://github.com/calungaproject/dfd.git
     targetRevision: main
-    path: manifests/overlays/production
+    path: manifests/overlays/mp-plus
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: dfd
+    namespace: calunga--runtime-int
 
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
       - ServerSideApply=true
     retry:
       limit: 3
