@@ -4,9 +4,6 @@
     "config:recommended"
   ],
   "dependencyDashboard": false,
-  "enabledManagers": [
-    "kustomize"
-  ],
   "packageRules": [
     {
       "description": "Track and auto-merge dfd image digest updates",
