@@ -6,7 +6,7 @@ metadata:
     app: dfd
     component: collector
 spec:
-  replicas: 1
+  replicas: 0
   strategy:
     type: Recreate
   selector:
