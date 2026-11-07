@@ -17,7 +17,7 @@
     "react-dom": "^19.0.0",
     "react-markdown": "^10.0.0",
     "remark-gfm": "^4.0.0",
-    "victory-bar": "^37.3.6",
+    "victory-bar": "^38.0.0",
     "victory-chart": "^37.3.6",
     "victory-core": "^37.3.6",
     "victory-legend": "^37.3.6",
